@@ -1,0 +1,388 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1220">
+<title>SMART CLOCK</title>
+<style>
+:root{
+--bg:#0b1220;--panel:#142238;--panel2:#1b2d45;
+--text:#f4f7fb;--muted:#a9b8ca;--gold:#f2c45b;
+--blue:#48b6c9;--border:rgba(255,255,255,.09);
+}
+body.light{
+color-scheme:light;
+--bg:#edf2f8;--panel:#fff;--panel2:#e8eef6;
+--text:#17243a;--muted:#5e6d81;--gold:#a87508;
+--blue:#087f91;--border:rgba(20,35,55,.12);
+}
+*{box-sizing:border-box}
+body{
+margin:0;min-height:100vh;padding:22px 14px 36px;
+background:var(--bg);color:var(--text);
+font-family:system-ui,"Segoe UI",Tahoma,Arial,sans-serif;
+}
+.app{width:min(100%,760px);margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-mark{
+width:44px;height:44px;display:grid;place-items:center;
+border-radius:14px;color:#101827;background:var(--gold);
+font-size:23px;font-weight:800
+}
+h1{margin:0;font-size:22px}
+.subtitle{color:var(--muted);font-size:12px;margin-top:3px}
+button{
+border:1px solid var(--border);border-radius:13px;
+background:var(--panel2);color:var(--text);
+padding:11px 15px;font:inherit;font-weight:650;
+cursor:pointer;touch-action:manipulation
+}
+button:active{transform:scale(.97)}
+button.primary{background:var(--gold);color:#172033;border:0}
+button.secondary{background:var(--blue);color:#061a20;border:0}
+button:focus-visible,input:focus-visible{outline:3px solid var(--blue)}
+.panel{
+background:var(--panel);border:1px solid var(--border);
+border-radius:23px;padding:22px;margin-bottom:16px;
+box-shadow:0 18px 45px rgba(0,0,0,.18)
+}
+.clock-panel{text-align:center}
+.eyebrow{color:var(--muted);font-size:13px}
+.digital{
+direction:ltr;font-variant-numeric:tabular-nums;
+font-size:clamp(43px,12vw,78px);
+font-weight:750;letter-spacing:1px;margin:8px 0
+}
+.digital .seconds{color:var(--gold)}
+.date{color:var(--muted);font-size:15px}
+.analog-wrap{display:grid;place-items:center;margin:20px auto 4px}
+.analog{
+width:min(66vw,245px);aspect-ratio:1;border-radius:50%;
+position:relative;border:5px solid var(--panel2);
+background:radial-gradient(circle,var(--panel) 0 61%,var(--panel2) 62% 100%);
+box-shadow:inset 0 0 25px rgba(0,0,0,.18),0 8px 25px rgba(0,0,0,.15)
+}
+.tick{
+position:absolute;left:50%;top:7px;width:2px;height:10px;
+background:var(--muted);
+transform-origin:50% calc(min(66vw,245px)/2 - 12px);
+opacity:.75
+}
+.tick.major{height:15px;width:3px;background:var(--gold)}
+.hand{
+position:absolute;left:50%;bottom:50%;border-radius:9px;
+transform:translateX(-50%) rotate(0deg);
+transform-origin:50% 100%
+}
+.hour{width:6px;height:25%;background:var(--text)}
+.minute{width:4px;height:34%;background:var(--blue)}
+.second{width:2px;height:39%;background:var(--gold)}
+.hub{
+position:absolute;width:13px;height:13px;border-radius:50%;
+background:var(--gold);left:50%;top:50%;
+transform:translate(-50%,-50%)
+}
+.section-title{margin:0 0 15px;font-size:18px}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.tool-card{min-width:0}
+.tool-card .readout{
+direction:ltr;text-align:center;font-variant-numeric:tabular-nums;
+font-size:clamp(25px,7vw,38px);font-weight:720;margin:12px 0 16px
+}
+.button-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.button-row button{flex:1 1 auto;min-width:76px;padding:10px}
+.timer-input{
+display:flex;justify-content:center;align-items:center;gap:7px;
+direction:ltr;margin:12px 0
+}
+.timer-input input{
+width:65px;max-width:26vw;padding:10px 5px;text-align:center;
+border:1px solid var(--border);border-radius:11px;
+background:var(--panel2);color:var(--text);font:inherit;font-size:18px
+}
+.timer-input label{color:var(--muted);font-size:12px}
+.hint{color:var(--muted);text-align:center;font-size:12px;margin:12px 0 0}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:10px}
+@media(max-width:440px){
+body{padding:16px 11px 28px}
+.tools{grid-template-columns:1fr}
+.panel{border-radius:19px}
+}
+</style>
+</head>
+<body>
+<main class="app">
+
+<header>
+<div class="brand">
+<div class="brand-mark">◷</div>
+<div>
+<h1>SMART CLOCK</h1>
+<div class="subtitle">الساعة الذكية</div>
+</div>
+</div>
+<button id="themeBtn" type="button">☀️ فاتح</button>
+</header>
+
+<section class="panel clock-panel">
+<div class="eyebrow">الوقت الآن</div>
+<div class="digital" id="digitalClock">--:--:--</div>
+<div class="date" id="dateText">جارٍ تحميل التاريخ...</div>
+
+<div class="analog-wrap">
+<div class="analog" id="analogClock">
+<div class="hand hour" id="hourHand"></div>
+<div class="hand minute" id="minuteHand"></div>
+<div class="hand second" id="secondHand"></div>
+<div class="hub"></div>
+</div>
+</div>
+</section>
+
+<h2 class="section-title">أدوات الوقت</h2>
+
+<div class="tools">
+
+<section class="panel tool-card">
+<h2 class="section-title">⏱️ ساعة الإيقاف</h2>
+<div class="readout" id="stopwatchDisplay">00:00.0</div>
+<div class="button-row">
+<button class="primary" id="stopwatchStart">ابدأ</button>
+<button id="stopwatchReset">إعادة ضبط</button>
+</div>
+</section>
+
+<section class="panel tool-card">
+<h2 class="section-title">⏳ المؤقت التنازلي</h2>
+
+<div class="timer-input">
+<div>
+<input id="timerMinutes" type="number" min="0" max="999" value="1">
+<label for="timerMinutes">دقيقة</label>
+</div>
+<span>:</span>
+<div>
+<input id="timerSeconds" type="number" min="0" max="59" value="0">
+<label for="timerSeconds">ثانية</label>
+</div>
+</div>
+
+<div class="readout" id="timerDisplay">01:00</div>
+
+<div class="button-row">
+<button class="secondary" id="timerStart">ابدأ</button>
+<button id="timerReset">إعادة ضبط</button>
+</div>
+<p class="hint" id="timerMessage">حدد الوقت ثم اضغط ابدأ</p>
+</section>
+
+</div>
+
+<footer>SMART CLOCK · الوقت حسب إعدادات جهازك</footer>
+</main>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,"0");
+
+function updateClock(){
+const now = new Date();
+const h = pad(now.getHours());
+const m = pad(now.getMinutes());
+const s = pad(now.getSeconds());
+
+$("digitalClock").textContent = `${h}:${m}:${s}`;
+
+$("dateText").textContent =
+new Intl.DateTimeFormat("ar",{
+weekday:"long",
+year:"numeric",
+month:"long",
+day:"numeric"
+}).format(now);
+
+const secondAngle = now.getSeconds()*6;
+const minuteAngle = (now.getMinutes()+now.getSeconds()/60)*6;
+const hourAngle = ((now.getHours()%12)+now.getMinutes()/60)*30;
+
+$("secondHand").style.transform =
+`translateX(-50%) rotate(${secondAngle}deg)`;
+$("minuteHand").style.transform =
+`translateX(-50%) rotate(${minuteAngle}deg)`;
+$("hourHand").style.transform =
+`translateX(-50%) rotate(${hourAngle}deg)`;
+}
+
+const dial = $("analogClock");
+
+for(let i=0;i<60;i++){
+const mark = document.createElement("span");
+mark.className = i%5===0 ? "tick major":"tick";
+mark.style.transform =
+`translateX(-50%) rotate(${i*6}deg)`;
+dial.insertBefore(mark,dial.firstChild);
+}
+
+$("themeBtn").addEventListener("click",()=>{
+const light = document.body.classList.toggle("light");
+$("themeBtn").textContent = light ? "🌙 داكن":"☀️ فاتح";
+document.querySelector('meta[name="theme-color"]')
+.setAttribute("content",light?"#edf2f8":"#0b1220");
+});
+
+// Stopwatch
+let stopwatchRunning=false;
+let stopwatchStartedAt=0;
+let stopwatchElapsed=0;
+let stopwatchInterval=null;
+
+function formatStopwatch(ms){
+const t=Math.floor(ms/100);
+const minutes=Math.floor(t/600);
+const seconds=Math.floor((t%600)/10);
+const tenth=t%10;
+return `${pad(minutes)}:${pad(seconds)}.${tenth}`;
+}
+
+function renderStopwatch(){
+const elapsed=stopwatchElapsed+
+(stopwatchRunning?performance.now()-stopwatchStartedAt:0);
+$("stopwatchDisplay").textContent=formatStopwatch(elapsed);
+}
+
+$("stopwatchStart").addEventListener("click",()=>{
+if(stopwatchRunning){
+stopwatchElapsed+=performance.now()-stopwatchStartedAt;
+stopwatchRunning=false;
+clearInterval(stopwatchInterval);
+stopwatchInterval=null;
+$("stopwatchStart").textContent="ابدأ";
+}else{
+stopwatchStartedAt=performance.now();
+stopwatchRunning=true;
+stopwatchInterval=setInterval(renderStopwatch,50);
+$("stopwatchStart").textContent="إيقاف";
+}
+renderStopwatch();
+});
+
+$("stopwatchReset").addEventListener("click",()=>{
+stopwatchRunning=false;
+clearInterval(stopwatchInterval);
+stopwatchInterval=null;
+stopwatchElapsed=0;
+$("stopwatchStart").textContent="ابدأ";
+renderStopwatch();
+});
+
+// Countdown timer
+let timerRemaining=60;
+let timerEndAt=0;
+let timerRunning=false;
+let timerInterval=null;
+
+function formatTimer(seconds){
+const n=Math.max(0,Math.ceil(seconds));
+return `${pad(Math.floor(n/60))}:${pad(n%60)}`;
+}
+
+function renderTimer(){
+$("timerDisplay").textContent=formatTimer(timerRemaining);
+}
+
+function stopTimer(){
+clearInterval(timerInterval);
+timerInterval=null;
+timerRunning=false;
+$("timerStart").textContent="ابدأ";
+}
+
+function readTimerInputs(){
+const minutes=Number($("timerMinutes").value);
+const seconds=Number($("timerSeconds").value);
+
+if(!Number.isInteger(minutes)||!Number.isInteger(seconds)||
+minutes<0||minutes>999||seconds<0||seconds>59){
+$("timerMessage").textContent="أدخل دقائق من 0 إلى 999 وثواني من 0 إلى 59";
+return null;
+}
+
+const total=minutes*60+seconds;
+
+if(total<=0){
+$("timerMessage").textContent="اختر مدة أكبر من صفر";
+return null;
+}
+return total;
+}
+
+function tickTimer(){
+timerRemaining=Math.max(0,(timerEndAt-Date.now())/1000);
+renderTimer();
+
+if(timerRemaining<=0){
+stopTimer();
+timerRemaining=0;
+renderTimer();
+$("timerMessage").textContent="انتهى الوقت!";
+if(navigator.vibrate) navigator.vibrate([180,100,180]);
+}
+}
+
+$("timerStart").addEventListener("click",()=>{
+if(timerRunning){
+timerRemaining=Math.max(0,(timerEndAt-Date.now())/1000);
+stopTimer();
+renderTimer();
+$("timerMessage").textContent="تم إيقاف المؤقت مؤقتًا";
+return;
+}
+
+if(timerRemaining<=0){
+const chosen=readTimerInputs();
+if(chosen===null)return;
+timerRemaining=chosen;
+}
+
+timerEndAt=Date.now()+timerRemaining*1000;
+timerRunning=true;
+$("timerStart").textContent="إيقاف";
+$("timerMessage").textContent="المؤقت يعمل";
+timerInterval=setInterval(tickTimer,100);
+tickTimer();
+});
+
+$("timerReset").addEventListener("click",()=>{
+stopTimer();
+const chosen=readTimerInputs();
+timerRemaining=chosen===null?0:chosen;
+renderTimer();
+$("timerMessage").textContent="تمت إعادة ضبط المؤقت";
+});
+
+$("timerMinutes").addEventListener("change",()=>{
+if(!timerRunning){
+const chosen=readTimerInputs();
+if(chosen!==null){timerRemaining=chosen;renderTimer();}
+}
+});
+
+$("timerSeconds").addEventListener("change",()=>{
+if(!timerRunning){
+const chosen=readTimerInputs();
+if(chosen!==null){timerRemaining=chosen;renderTimer();}
+}
+});
+
+updateClock();
+setInterval(updateClock,250);
+renderStopwatch();
+renderTimer();
+</script>
+</body>
+</html>
